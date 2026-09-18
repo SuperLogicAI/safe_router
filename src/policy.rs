@@ -81,6 +81,10 @@ pub struct RouteConfig {
 pub enum ConfigError {
     #[error("invalid TOML: {0}")]
     Parse(#[from] toml::de::Error),
+    #[error("[server] plane '{plane}' is invalid — expected 'safe' or 'escalation'")]
+    InvalidPlane { plane: String },
+    #[error("safe-plane config must not contain [[provider]] entries")]
+    SafePlaneProvider,
     #[error(
         "safe-plane backend '{id}' has non-loopback base_url '{base_url}' — \
          invariant #7 requires loopback-only backends on the safe plane"
@@ -128,6 +132,18 @@ pub enum ConfigError {
 
 pub fn parse_config(raw: &str) -> Result<Config, ConfigError> {
     Ok(toml::from_str(raw)?)
+}
+
+/// Enforce the split-plane schema before credentials are loaded or a socket
+/// is bound. A safe process must have no remote provider configuration.
+pub fn validate_plane(config: &Config) -> Result<(), ConfigError> {
+    match config.server.plane.as_str() {
+        "safe" if !config.providers.is_empty() => Err(ConfigError::SafePlaneProvider),
+        "safe" | "escalation" => Ok(()),
+        _ => Err(ConfigError::InvalidPlane {
+            plane: config.server.plane.clone(),
+        }),
+    }
 }
 
 /// Invariant #7 / SPEC §4.1: the safe plane's backends must be
@@ -471,6 +487,44 @@ mod tests {
         assert_eq!(config.server.bind, "127.0.0.1:8787");
         assert_eq!(config.keys.len(), 1);
         assert_eq!(config.keys[0].id, "test-client");
+        assert!(validate_plane(&config).is_ok());
+    }
+
+    #[test]
+    fn safe_plane_rejects_provider_entries() {
+        let config = parse_config(
+            r#"
+            [server]
+            bind = "127.0.0.1:8787"
+            plane = "safe"
+            [[provider]]
+            id = "remote"
+            base_url = "https://example.com/v1"
+            dialect = "openai"
+            keychain_item = "safe-router/remote"
+        "#,
+        )
+        .unwrap();
+        assert!(matches!(
+            validate_plane(&config),
+            Err(ConfigError::SafePlaneProvider)
+        ));
+    }
+
+    #[test]
+    fn unknown_plane_is_rejected() {
+        let config = parse_config(
+            r#"
+            [server]
+            bind = "127.0.0.1:8787"
+            plane = "sfae"
+        "#,
+        )
+        .unwrap();
+        assert!(matches!(
+            validate_plane(&config),
+            Err(ConfigError::InvalidPlane { .. })
+        ));
     }
 
     #[test]

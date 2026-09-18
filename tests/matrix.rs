@@ -276,6 +276,35 @@ fn matrix_row_07_invalid_config_refuses_to_start() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+#[test]
+fn safe_plane_provider_and_unknown_plane_refuse_to_start() {
+    for (name, config, expected) in [
+        (
+            "provider",
+            "[server]\nbind = \"127.0.0.1:8787\"\nplane = \"safe\"\n[[provider]]\nid = \"remote\"\nbase_url = \"https://example.com/v1\"\ndialect = \"openai\"\nkeychain_item = \"safe-router/remote\"\n",
+            "must not contain [[provider]]",
+        ),
+        (
+            "plane",
+            "[server]\nbind = \"127.0.0.1:8787\"\nplane = \"sfae\"\n",
+            "plane 'sfae' is invalid",
+        ),
+    ] {
+        let dir = unique_temp_dir(name);
+        let path = dir.join("safe.toml");
+        std::fs::write(&path, config).unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_safe-router"))
+            .arg("--config")
+            .arg(&path)
+            .output()
+            .expect("spawn safe-router binary");
+        assert!(!output.status.success(), "{name} config must refuse startup");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(stderr.contains(expected), "stderr: {stderr}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+}
+
 // ---------------------------------------------------------------------
 // Row 8 — SIGHUP reload with an invalid config: keep the old config, log
 // loudly, set a degraded flag. Exercised via `reload_attempt` directly

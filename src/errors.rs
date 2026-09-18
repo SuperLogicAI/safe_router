@@ -76,6 +76,14 @@ impl ApiError {
         )
     }
 
+    pub fn backend_redirect_rejected() -> Self {
+        Self::new(
+            StatusCode::BAD_GATEWAY,
+            "backend_redirect_rejected",
+            "safe-plane backend returned a redirect",
+        )
+    }
+
     pub fn backend_not_configured() -> Self {
         Self::new(
             StatusCode::BAD_GATEWAY,

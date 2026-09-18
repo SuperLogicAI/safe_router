@@ -102,6 +102,7 @@ fn load_and_validate(config_path: &Path) -> Result<policy::Config, String> {
     let raw = std::fs::read_to_string(config_path)
         .map_err(|e| format!("cannot read config {}: {e}", config_path.display()))?;
     let config = policy::parse_config(&raw).map_err(|e| format!("invalid config: {e}"))?;
+    policy::validate_plane(&config).map_err(|e| e.to_string())?;
     policy::validate_bind_address(&config).map_err(|e| e.to_string())?;
     policy::validate_allowed_hosts(&config).map_err(|e| e.to_string())?;
     policy::validate_safe_plane_backends(&config).map_err(|e| e.to_string())?;

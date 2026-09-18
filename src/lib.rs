@@ -73,7 +73,12 @@ impl AppState {
         let degraded = Arc::new(AtomicBool::new(false));
         Self {
             config: Arc::new(RwLock::new(config)),
-            http_client: reqwest::Client::new(),
+            // A validated local backend must not redirect a request to a
+            // different host. Relay 3xx responses to the caller unchanged.
+            http_client: reqwest::Client::builder()
+                .redirect(reqwest::redirect::Policy::none())
+                .build()
+                .expect("static HTTP client configuration is valid"),
             log: Arc::new(log::Log::open_in_memory(degraded.clone())),
             degraded,
             credentials: Arc::new(HashMap::new()),
@@ -254,7 +259,7 @@ fn disposition_for_code(code: &str) -> Option<&'static str> {
     match code {
         "auth_unknown_key" | "policy_bad_host" | "policy_origin_rejected" => Some("denied_auth"),
         "invalid_request_body" | "policy_denied_model" => Some("denied_policy"),
-        "backend_unreachable" | "backend_not_configured" | "route_unresolvable"
+        "backend_unreachable" | "backend_redirect_rejected" | "backend_not_configured" | "route_unresolvable"
         | "model_mismatch" => Some("backend_error"),
         _ => None,
     }

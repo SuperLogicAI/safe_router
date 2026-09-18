@@ -327,11 +327,17 @@ unlocked login Keychain, which the escalation plane needs for
 
 ```sh
 mkdir -p ~/.safe-router/bin ~/.safe-router/logs
-cp target/release/safe-router ~/.safe-router/bin/
+# Stage alongside the installed binary, then atomically replace it. Never
+# copy directly over a binary a running launchd job may have mapped.
+cp target/release/safe-router ~/.safe-router/bin/safe-router.next
+mv -f ~/.safe-router/bin/safe-router.next ~/.safe-router/bin/safe-router
 # safe.toml / escalation.toml already live at ~/.safe-router/ from earlier steps
 
-cp launchd/com.superlogicai.safe-router.safe.plist ~/Library/LaunchAgents/
-cp launchd/com.superlogicai.safe-router.escalation.plist ~/Library/LaunchAgents/
+for p in launchd/com.superlogicai.safe-router.safe.plist \
+         launchd/com.superlogicai.safe-router.escalation.plist; do
+  sed "s|__SAFE_ROUTER_HOME__|$HOME/.safe-router|g" "$p" \
+    > "$HOME/Library/LaunchAgents/$(basename "$p")"
+done
 
 launchctl load ~/Library/LaunchAgents/com.superlogicai.safe-router.safe.plist
 launchctl load ~/Library/LaunchAgents/com.superlogicai.safe-router.escalation.plist

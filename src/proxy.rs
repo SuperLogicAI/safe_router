@@ -132,11 +132,12 @@ fn resolve_target(config: &policy::Config, credentials: &HashMap<String, String>
 }
 
 pub async fn list_models(State(state): State<AppState>) -> Response {
-    let (target, idle_timeout) = {
+    let (target, idle_timeout, safe_plane) = {
         let config = state.config.read().await;
         (
             resolve_target(&config, &state.credentials),
             Duration::from_millis(config.server.idle_timeout_ms),
+            config.server.plane == "safe",
         )
     };
     let Some(target) = target else {
@@ -147,6 +148,9 @@ pub async fn list_models(State(state): State<AppState>) -> Response {
     let req = apply_credential(state.http_client.get(&url), &target, None, None);
 
     match req.send().await {
+        Ok(resp) if safe_plane && resp.status().is_redirection() => {
+            ApiError::backend_redirect_rejected().into_response()
+        }
         Ok(resp) => relay(resp, false, None, idle_timeout, Dialect::OpenAi).await,
         Err(e) => {
             tracing::warn!(error = %e, %url, "backend unreachable");
@@ -283,6 +287,9 @@ pub async fn chat_completions(
         match req.body(rewritten_body).send().await {
             Ok(resp) => {
                 let status = resp.status();
+                if plane == "safe" && status.is_redirection() {
+                    return ApiError::backend_redirect_rejected().into_response();
+                }
                 if chain.advance_on_error && !is_last && is_retryable_status(status) {
                     tracing::warn!(chain_pos, %status, backend = %rung.backend_id, "rung failed, advancing");
                     continue;
@@ -389,6 +396,9 @@ pub async fn messages(
         match req.body(rewritten_body).send().await {
             Ok(resp) => {
                 let status = resp.status();
+                if plane == "safe" && status.is_redirection() {
+                    return ApiError::backend_redirect_rejected().into_response_for(Dialect::Anthropic);
+                }
                 if chain.advance_on_error && !is_last && is_retryable_status(status) {
                     tracing::warn!(chain_pos, %status, backend = %rung.backend_id, "rung failed, advancing");
                     continue;

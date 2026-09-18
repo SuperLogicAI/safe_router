@@ -4,13 +4,17 @@
 mod support;
 
 use std::{
-    sync::atomic::Ordering,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
     time::Duration,
 };
 
 use axum::{
     body::{to_bytes, Body},
     http::{header, Request, StatusCode},
+    routing::post,
     Router,
 };
 use futures_util::StreamExt;
@@ -97,6 +101,53 @@ async fn chat_completions_non_streaming_passthrough() {
     let body = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["model"], "echo-model");
+}
+
+#[tokio::test]
+async fn safe_plane_does_not_follow_backend_redirect() {
+    let redirected_hits = Arc::new(AtomicUsize::new(0));
+    let hits = redirected_hits.clone();
+    let destination = Router::new().route(
+        "/v1/chat/completions",
+        post(move || {
+            let hits = hits.clone();
+            async move {
+                hits.fetch_add(1, Ordering::SeqCst);
+                StatusCode::OK
+            }
+        }),
+    );
+    let destination_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let destination_addr = destination_listener.local_addr().unwrap();
+    tokio::spawn(async move { axum::serve(destination_listener, destination).await.unwrap() });
+
+    let location = format!("http://{destination_addr}/v1/chat/completions");
+    let redirector = Router::new().route(
+        "/v1/chat/completions",
+        post(move || {
+            let location = location.clone();
+            async move { (StatusCode::TEMPORARY_REDIRECT, [(header::LOCATION, location)]) }
+        }),
+    );
+    let source_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let source_addr = source_listener.local_addr().unwrap();
+    tokio::spawn(async move { axum::serve(source_listener, redirector).await.unwrap() });
+
+    let app = router_with_backend(&format!("http://{source_addr}/v1")).await;
+    let response = app
+        .oneshot(authed_request(
+            "POST",
+            "/v1/chat/completions",
+            Body::from(r#"{"model":"mock/echo-model","messages":[]}"#),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
+    assert!(response.headers().get(header::LOCATION).is_none());
+    let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["error"]["code"], "backend_redirect_rejected");
+    assert_eq!(redirected_hits.load(Ordering::SeqCst), 0);
 }
 
 #[tokio::test]
