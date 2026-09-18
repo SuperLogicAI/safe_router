@@ -1,0 +1,10 @@
+.DS_Store
+/target
+.logic-loop/
+
+# Operator-private: a filled-in copy is a map of this machine's network and
+# client work. Template is docs/DEPLOYMENT.example.md.
+/docs/DEPLOYMENT.md
+
+# Third-party analysis, not ours to publish.
+/pentester_perspective/

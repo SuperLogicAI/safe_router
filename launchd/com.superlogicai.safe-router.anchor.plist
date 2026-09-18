@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Anchor push job (Phase 2 Step 3 / SPEC §11 Q4). Not loaded by any
+  automation — Step 11 writes this file and documents the load command in
+  docs/TESTING.md; a human runs `launchctl load` (CLAUDE.md: no launchd load
+  without asking first).
+
+  This is the offline anchoring path, deliberately separate from both plane
+  daemons: it runs `safe-router anchor` (refuses to write a head over a
+  broken chain) and then pushes the resulting head.json to the off-box
+  remote. Neither plane process ever makes this connection itself — see
+  CLAUDE.md's landmine on side exits and SPEC's split-plane invariant.
+
+  StartInterval, not RunAtLoad+KeepAlive: this is a periodic job, not a
+  long-running service. A failed run (chain diverged, push rejected) should
+  surface in the error log, not respawn — same fail-closed reasoning as the
+  plane daemons' launchd jobs.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.superlogicai.safe-router.anchor</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__SAFE_ROUTER_HOME__/bin/anchor-push.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__SAFE_ROUTER_HOME__</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <!-- The anchor remote. anchor-push.sh has no default on purpose, so a
+             misconfigured job pushes nowhere instead of somewhere unintended. -->
+        <key>ANCHOR_REPO_URL</key>
+        <string>__ANCHOR_REPO_URL__</string>
+    </dict>
+
+    <key>StartInterval</key>
+    <integer>3600</integer>
+
+    <key>StandardOutPath</key>
+    <string>__SAFE_ROUTER_HOME__/logs/anchor.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__SAFE_ROUTER_HOME__/logs/anchor.err.log</string>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>

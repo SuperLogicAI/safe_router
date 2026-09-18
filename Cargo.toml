@@ -1,0 +1,29 @@
+[package]
+name = "safe-router"
+version = "0.1.0"
+edition = "2024"
+description = "Headless split-plane model router: traffic on a safe-plane key is served by a local backend or not at all."
+repository = "https://github.com/SuperLogicAI/safe_router"
+license = "Apache-2.0"
+readme = "README.md"
+# Not a library, and the binary is distributed as a signed build, not from
+# crates.io.
+publish = false
+
+[dependencies]
+argon2 = { version = "0.5.3", features = ["std"] }
+axum = "0.8.9"
+futures-util = "0.3.34"
+reqwest = { version = "0.13.4", default-features = false, features = ["rustls", "stream", "json"] }
+rusqlite = { version = "0.40.2", features = ["bundled"] }
+serde = { version = "1.0.229", features = ["derive"] }
+sha2 = "0.10.9"
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "signal", "net", "io-util", "time", "sync"] }
+toml = "1.1.4"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+
+[dev-dependencies]
+tower = { version = "0.5.3", features = ["util"] }

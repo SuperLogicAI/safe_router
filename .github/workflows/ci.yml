@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    # macos-latest, not ubuntu: the daemon shells out to /usr/bin/security
+    # (src/keychain.rs) and is built for macOS deployment (SPEC's launchd
+    # target). Matching the runner to the real target beats a green build
+    # that never ran on the actual OS.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: test
+        run: cargo test
+
+  audit:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: install cargo-audit
+        run: cargo install cargo-audit --locked
+      - name: cargo audit
+        run: cargo audit
+
+  deny:
+    # ubuntu-latest, not macos: cargo-deny-action is a Docker container
+    # action, which GitHub Actions only supports on Linux runners. Unlike
+    # `test`/`audit`, this job has no macOS-specific behavior to verify.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check

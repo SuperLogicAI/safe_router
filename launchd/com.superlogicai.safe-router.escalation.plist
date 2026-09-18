@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Escalation plane launchd job. Same reasoning as the safe-plane plist
+  (com.superlogicai.safe-router.safe.plist) — not loaded automatically,
+  KeepAlive false on purpose. See that file's comment for why.
+
+  This plane also needs Keychain access at startup (src/keychain.rs shells
+  out to /usr/bin/security for the `safe-router/openai` item). A launchd
+  agent (not daemon) running in the user's own login session inherits that
+  session's Keychain unlock state, which a LaunchDaemon running as root
+  would not — this is why both plists belong under
+  ~/Library/LaunchAgents, not /Library/LaunchDaemons (documented in
+  docs/TESTING.md's load command, not encoded here since agent vs. daemon
+  is a install-location decision, not a plist key).
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.superlogicai.safe-router.escalation</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__SAFE_ROUTER_HOME__/bin/safe-router</string>
+        <string>--config</string>
+        <string>__SAFE_ROUTER_HOME__/escalation.toml</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__SAFE_ROUTER_HOME__</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>__SAFE_ROUTER_HOME__/logs/escalation.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__SAFE_ROUTER_HOME__/logs/escalation.err.log</string>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>

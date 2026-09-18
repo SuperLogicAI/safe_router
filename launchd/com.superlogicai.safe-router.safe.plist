@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Safe plane launchd job. Not loaded by any automation — Step 8 writes this
+  file and documents the load command in docs/TESTING.md; a human runs
+  `launchctl load` (CLAUDE.md: no launchd load without asking first).
+
+  KeepAlive is deliberately false, not a crash-restart dict. Invariant #1 is
+  fail-closed: a refused startup (bad config, unfetchable credential, port in
+  use) exits non-zero on purpose, and launchd cannot tell that apart from a
+  real crash. A crash-restart policy here would turn a deliberate refusal
+  into a silent respawn loop — exactly the kind of automatic "recovery" this
+  project's invariants exist to prevent. Restart is a human action.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.superlogicai.safe-router.safe</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__SAFE_ROUTER_HOME__/bin/safe-router</string>
+        <string>--config</string>
+        <string>__SAFE_ROUTER_HOME__/safe.toml</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__SAFE_ROUTER_HOME__</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>__SAFE_ROUTER_HOME__/logs/safe.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__SAFE_ROUTER_HOME__/logs/safe.err.log</string>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>
