@@ -73,9 +73,10 @@ describes that boundary.
 
 Safe Router also provides a versioned, read-only SQLite log contract for
 independent tools. The field meanings, nullability, trust limits, and reader
-setup are in [docs/LOG_CONTRACT.md](docs/LOG_CONTRACT.md). Logic Loop could
-consume that contract in its own optional panel; it is neither a Safe Router
-dependency nor a panel shipped by this repository.
+setup are in [docs/LOG_CONTRACT.md](docs/LOG_CONTRACT.md).
+[Logic Loop](https://github.com/SuperLogicAI/Logic-Loop) could consume that
+contract in its own optional panel; it is neither a Safe Router dependency nor
+a panel shipped by this repository.
 
 **Development build:** `v_requests_v2` is on `master` and was verified in
 a local deployment on 2026-09-13. It is not yet part of a tagged release.
@@ -105,3 +106,12 @@ the honest half.
 
 Copyright 2026 Super Logic AI. Licensed under the Apache License, Version 2.0
 ([LICENSE](LICENSE) or <https://www.apache.org/licenses/LICENSE-2.0>).
+
+---
+
+Built and maintained by [Super Logic AI](https://superlogicai.com) — AI automation
+for small businesses.
+
+Also from Super Logic AI: **[Logic Loop](https://github.com/SuperLogicAI/Logic-Loop)**,
+an open-source macOS app for switching between several concurrent AI coding agent
+terminal sessions without losing your own context.
