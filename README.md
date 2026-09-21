@@ -7,8 +7,6 @@
   <a href="https://superlogicai.com"><img src="assets/by-super-logic-ai.svg" alt="by Super Logic AI" height="22" valign="middle"></a>
 </h1>
 
----
-
 <p align="center"><strong>Keep sensitive AI traffic local—or don't serve it at all.</strong></p>
 
 ---
