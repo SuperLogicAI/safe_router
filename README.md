@@ -19,6 +19,44 @@ on `127.0.0.1:1234`, and a model loaded in that backend. Keep the backend
 bound to loopback; see the [deployment checklist](docs/DEPLOYMENT.example.md)
 before using this with sensitive requests.
 
+### Agent-assisted setup
+
+To have Claude Code or Codex install and configure the safe plane, open the
+agent in the directory where you want Safe Router checked out and paste this
+prompt:
+
+```text
+Install and set up Safe Router for me from
+https://github.com/SuperLogicAI/safe_router.
+
+Follow the repository's README, CLAUDE.md, and docs/DEPLOYMENT.example.md. Set
+up the local-only safe plane first; do not configure remote providers or the
+escalation plane. Inspect my machine before making changes, preserve and report
+any existing Safe Router configuration, and ask before installing a toolchain,
+changing settings outside ~/.safe-router, writing a launchd plist, or loading a
+launchd job.
+
+Use an OpenAI-compatible local backend bound only to loopback. If I already
+have one running, discover its actual model IDs and let me choose the model if
+there is more than one reasonable option. If I do not have one ready, explain
+the smallest next step and help me complete it. Verify that the backend is not
+listening on a LAN or tailnet address before treating setup as complete.
+
+Build Safe Router with its locked dependencies, generate a new sp_-prefixed
+client key, store only its Argon2id hash in ~/.safe-router/safe.toml, and allow
+the selected local model. Never print the key after the initial handoff or put
+it in shell history, source files, logs, or chat summaries. Start the router,
+verify /v1/models and a small chat-completions request through it, and give me
+the base URL, model ID, and one-time client key so I can configure my client.
+If any check fails, diagnose it and keep the safe plane fail-closed rather than
+adding a remote fallback. At the end, summarize what you changed, what is
+running, and any manual or persistence step that remains.
+```
+
+The agent should stop for choices that depend on your machine, such as which
+loaded model to allow or whether to install a persistent launchd job. For a
+fully manual setup, continue below.
+
 ```sh
 cargo build --locked
 mkdir -p "$HOME/.safe-router"
