@@ -27,10 +27,26 @@ planes.
 
 ## Quickstart (macOS, safe plane)
 
-You need Rust, a local OpenAI-compatible backend such as LM Studio listening
-on `127.0.0.1:1234`, and a model loaded in that backend. Keep the backend
-bound to loopback; see the [deployment checklist](docs/DEPLOYMENT.example.md)
-before using this with sensitive requests.
+You need Rust and a local OpenAI-compatible backend with a model available.
+Safe Router supports LM Studio on `127.0.0.1:1234` and Ollama on
+`127.0.0.1:11434` through their OpenAI-compatible APIs. Keep the backend bound
+to loopback; see the [deployment checklist](docs/DEPLOYMENT.example.md) before
+using this with sensitive requests.
+
+For LM Studio, load a model and start its server on loopback:
+
+```sh
+lms server stop
+lms server start --port 1234 --bind 127.0.0.1
+```
+
+For Ollama, pull a model. Ollama binds to `127.0.0.1:11434` by default:
+
+```sh
+ollama pull llama3.2
+```
+
+If the Ollama app is not already running, start it with `ollama serve`.
 
 ### Agent-assisted setup
 
@@ -49,11 +65,12 @@ any existing Safe Router configuration, and ask before installing a toolchain,
 changing settings outside ~/.safe-router, writing a launchd plist, or loading a
 launchd job.
 
-Use an OpenAI-compatible local backend bound only to loopback. If I already
-have one running, discover its actual model IDs and let me choose the model if
-there is more than one reasonable option. If I do not have one ready, explain
-the smallest next step and help me complete it. Verify that the backend is not
-listening on a LAN or tailnet address before treating setup as complete.
+Use LM Studio or Ollama through its OpenAI-compatible API, with the local
+backend bound only to loopback. If I already have one running, discover its
+actual model IDs and let me choose the model if there is more than one
+reasonable option. If I do not have one ready, explain the smallest next step
+and help me complete it. Verify that the backend is not listening on a LAN or
+tailnet address before treating setup as complete.
 
 Build Safe Router with its locked dependencies, generate a new sp_-prefixed
 client key, store only its Argon2id hash in ~/.safe-router/safe.toml, and allow
@@ -79,7 +96,8 @@ ROUTER_HASH=$(printf '%s' "$ROUTER_KEY" | target/debug/safe-router hash-key)
 
 Print the hash with `printf '%s\n' "$ROUTER_HASH"`, then create
 `$HOME/.safe-router/safe.toml` with that hash. Replace `YOUR_MODEL_ID` with
-an ID actually loaded in the backend (including any slash in the model ID):
+an ID actually loaded in the backend, including any slash or Ollama tag such
+as `:latest`:
 
 ```toml
 [server]
@@ -97,6 +115,12 @@ hash = "<paste ROUTER_HASH here>"
 allow = ["local/YOUR_MODEL_ID"]
 ```
 
+The example uses LM Studio. For Ollama, set the backend URL to:
+
+```toml
+base_url = "http://127.0.0.1:11434/v1"
+```
+
 Run the router in a second terminal with
 `target/debug/safe-router --config "$HOME/.safe-router/safe.toml"`.
 From the first terminal, check the connection and make a request:
@@ -109,9 +133,10 @@ curl http://127.0.0.1:8787/v1/chat/completions \
   -d '{"model":"local/YOUR_MODEL_ID","messages":[{"role":"user","content":"Hello"}]}'
 ```
 
-The first response lists available model IDs. If needed, update the
-`allow` entry and request model to match one of those IDs, then restart the
-router or send it SIGHUP to reload the config.
+The first response lists available model IDs. Copy the ID exactly as reported;
+for Ollama this commonly includes a tag such as `llama3.2:latest`. If needed,
+update the `allow` entry and request model to match one of those IDs, then
+restart the router or send it SIGHUP to reload the config.
 
 Keep the key private and give clients only the key for their intended plane.
 For the escalation plane, launchd installation, signing, and log anchoring,

@@ -104,6 +104,27 @@ async fn chat_completions_non_streaming_passthrough() {
 }
 
 #[tokio::test]
+async fn ollama_style_tagged_model_id_passes_safe_plane_model_gate() {
+    let base_url = support::spawn_mock_backend().await;
+    let app = router_with_backend_and_allow(&base_url, &["mock/llama3.2:latest"]).await;
+
+    let req_body = r#"{"model":"mock/llama3.2:latest","stream":false,"messages":[]}"#;
+    let resp = app
+        .oneshot(authed_request(
+            "POST",
+            "/v1/chat/completions",
+            Body::from(req_body),
+        ))
+        .await
+        .unwrap();
+
+    assert_eq!(resp.status(), StatusCode::OK);
+    let body = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["model"], "llama3.2:latest");
+}
+
+#[tokio::test]
 async fn safe_plane_does_not_follow_backend_redirect() {
     let redirected_hits = Arc::new(AtomicUsize::new(0));
     let hits = redirected_hits.clone();
