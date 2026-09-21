@@ -2,10 +2,16 @@
   <img src="assets/safe-router.gif" alt="A padlock emerging from darkness" width="100%">
 </p>
 
-  <h1 align="center">
-    Safe Router
-    <small><a href="https://superlogicai.com">by Super Logic AI</a></small>
-  </h1>
+<h1 align="center">
+  Safe Router
+  <a href="https://superlogicai.com"><img src="assets/by-super-logic-ai.svg" alt="by Super Logic AI" height="22" valign="middle"></a>
+</h1>
+
+---
+
+<p align="center"><strong>Keep sensitive AI traffic local—or don't serve it at all.</strong></p>
+
+---
 
 Safe Router is a headless, local-first model router. It keeps designated
 clients on approved local backends, brokers explicitly authorized remote
