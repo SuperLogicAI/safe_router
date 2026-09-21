@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/safe-router.gif" alt="A padlock emerging from darkness" width="100%">
+</p>
+
 # Safe Router
 
 Safe Router is a headless, local-first model router. It keeps designated
