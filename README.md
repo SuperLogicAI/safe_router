@@ -56,7 +56,7 @@ prompt:
 
 ```text
 Install and set up Safe Router for me from
-https://github.com/SuperLogicAI/safe_router.
+https://github.com/SuperLogicAI/safe-router.
 
 Follow the repository's README, CLAUDE.md, and docs/DEPLOYMENT.example.md. Set
 up the local-only safe plane first; do not configure remote providers or the

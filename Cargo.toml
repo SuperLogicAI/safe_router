@@ -3,7 +3,7 @@ name = "safe-router"
 version = "0.1.0"
 edition = "2024"
 description = "Headless split-plane model router: traffic on a safe-plane key is served by a local backend or not at all."
-repository = "https://github.com/SuperLogicAI/safe_router"
+repository = "https://github.com/SuperLogicAI/safe-router"
 license = "Apache-2.0"
 readme = "README.md"
 # Not a library, and the binary is distributed as a signed build, not from

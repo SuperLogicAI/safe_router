@@ -389,7 +389,7 @@ supported on Linux`). Fixed by moving `deny` to `ubuntu-latest` — it has no
 macOS-specific behavior to verify, unlike `test`/`audit`, which stay on
 `macos-latest` for the real `/usr/bin/security` shell-out. Re-run after the
 fix: `test`, `audit`, `deny` all green
-(github.com/SuperLogicAI/safe_router/actions).
+(github.com/SuperLogicAI/safe-router/actions).
 
 ## Step 9 — Tailnet bind (Phase 2 Step 1)
 
